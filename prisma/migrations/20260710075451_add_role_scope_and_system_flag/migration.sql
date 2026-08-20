@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE `roles` ADD COLUMN `is_system` BOOLEAN NOT NULL DEFAULT false,
+    ADD COLUMN `scope` ENUM('ALL', 'DEPARTMENT', 'SELF') NOT NULL DEFAULT 'ALL';
