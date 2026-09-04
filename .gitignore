@@ -50,3 +50,6 @@ next-env.d.ts
 /public/uploads/**
 !/public/uploads/**/
 !/public/uploads/**/.gitkeep
+
+# database backup snapshots (pre-restore safety dumps)
+/backups
