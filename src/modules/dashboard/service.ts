@@ -3,24 +3,51 @@ import { getRoleScope, type ScopeActor } from "@/modules/assets/service";
 import { descriptorFor } from "@/modules/assets/types/registry";
 
 const WARRANTY_WINDOW_DAYS = 30;
+const TREND_WINDOW_DAYS = 30;
+
+/** Percent change vs `prev`. null when there's no basis to compare against. */
+function trendPct(current: number, prev: number): number | null {
+  if (prev === 0) return current > 0 ? 100 : null;
+  return Math.round(((current - prev) / prev) * 100);
+}
 
 export async function getDashboardStats(actor: ScopeActor) {
-  const baseWhere = { deletedAt: null, ...getRoleScope(actor) };
+  const scope = getRoleScope(actor);
+  const baseWhere = { deletedAt: null, ...scope };
   const now = new Date();
   const warrantyWindowEnd = new Date(now.getTime() + WARRANTY_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+  const trendCutoff = new Date(now.getTime() - TREND_WINDOW_DAYS * 24 * 60 * 60 * 1000);
 
-  const [total, assigned, available, underRepair, warrantyExpiring, vendorCount] = await Promise.all([
-    prisma.asset.count({ where: baseWhere }),
-    prisma.asset.count({ where: { ...baseWhere, status: "ASSIGNED" } }),
-    prisma.asset.count({ where: { ...baseWhere, status: "AVAILABLE" } }),
-    prisma.asset.count({ where: { ...baseWhere, status: "UNDER_REPAIR" } }),
-    prisma.asset.count({
-      where: { ...baseWhere, warrantyEnd: { gte: now, lte: warrantyWindowEnd } },
-    }),
-    prisma.vendor.count({ where: { deletedAt: null } }),
-  ]);
+  // "Existed as of `trendCutoff`": created on/before the cutoff and not yet deleted then. This is a
+  // REAL reconstruction from creation history — the only trend the schema can honestly support.
+  // Status-based counts (assigned/available/under-repair) have no history, so they get no trend.
+  const existedThen = { createdAt: { lte: trendCutoff }, OR: [{ deletedAt: null }, { deletedAt: { gt: trendCutoff } }] };
 
-  return { total, assigned, available, underRepair, warrantyExpiring, vendorCount };
+  const [total, assigned, available, underRepair, warrantyExpiring, vendorCount, totalPrev, vendorPrev] =
+    await Promise.all([
+      prisma.asset.count({ where: baseWhere }),
+      prisma.asset.count({ where: { ...baseWhere, status: "ASSIGNED" } }),
+      prisma.asset.count({ where: { ...baseWhere, status: "AVAILABLE" } }),
+      prisma.asset.count({ where: { ...baseWhere, status: "UNDER_REPAIR" } }),
+      prisma.asset.count({ where: { ...baseWhere, warrantyEnd: { gte: now, lte: warrantyWindowEnd } } }),
+      prisma.vendor.count({ where: { deletedAt: null } }),
+      prisma.asset.count({ where: { ...scope, ...existedThen } }),
+      prisma.vendor.count({ where: existedThen }),
+    ]);
+
+  return {
+    total,
+    assigned,
+    available,
+    underRepair,
+    warrantyExpiring,
+    vendorCount,
+    // Real 30-day change where the data allows it; null elsewhere (rendered neutral).
+    trends: {
+      total: trendPct(total, totalPrev),
+      vendorCount: trendPct(vendorCount, vendorPrev),
+    },
+  };
 }
 
 /** Assets grouped by their type — what "by category" meant before categories were removed. */

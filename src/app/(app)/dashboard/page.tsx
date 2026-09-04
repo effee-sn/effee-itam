@@ -139,14 +139,14 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
           {canViewAssets && (
             <>
-              <StatCard label="Total Assets" value={stats.total} caption="All registered assets" icon={Layers} tone="blue" />
+              <StatCard label="Total Assets" value={stats.total} caption="All registered assets" icon={Layers} tone="blue" trend={stats.trends.total} />
               <StatCard label="Assigned Assets" value={stats.assigned} caption="In use by employees" icon={Monitor} tone="green" />
               <StatCard label="Available Assets" value={stats.available} caption="Ready to assign" icon={PackageCheck} tone="purple" />
               <StatCard label="Under Repair" value={stats.underRepair} caption="Currently in service" icon={Wrench} tone="orange" />
               <StatCard label="Warranty Expiring" value={stats.warrantyExpiring} caption="In next 30 days" icon={ShieldCheck} tone="red" />
             </>
           )}
-          {canViewVendors && <StatCard label="Vendors" value={stats.vendorCount} caption="Active vendors" icon={Store} tone="slate" />}
+          {canViewVendors && <StatCard label="Vendors" value={stats.vendorCount} caption="Active vendors" icon={Store} tone="slate" trend={stats.trends.vendorCount} />}
         </div>
       )}
 

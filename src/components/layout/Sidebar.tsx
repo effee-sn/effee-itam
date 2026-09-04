@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Boxes } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { navConfig, NAV_PARENTS, type NavConfigItem } from "./nav-config";
 import { NavItem } from "./NavItem";
+import packageJson from "../../../package.json";
 
 /** A group renders a flat item or a collapsible parent, in navConfig's own order. */
 type GroupEntry = { kind: "item"; item: NavConfigItem } | { kind: "parent"; key: string; items: NavConfigItem[] };
@@ -62,13 +63,20 @@ export function Sidebar({ companyName, logoPath }: { companyName: string; logoPa
   }
 
   return (
-    <aside className="flex w-56 shrink-0 flex-col border-r bg-white dark:border-neutral-800 dark:bg-neutral-950">
-      <div className="flex items-center gap-2 px-4 py-4">
-        {logoPath && (
+    <aside className="flex w-60 shrink-0 flex-col border-r border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950">
+      <div className="flex items-center gap-2.5 px-4 py-4">
+        {logoPath ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={logoPath} alt={companyName} className="h-8 w-8 shrink-0 object-contain" />
+          <img src={logoPath} alt={companyName} className="h-9 w-9 shrink-0 object-contain" />
+        ) : (
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-600 text-sm font-bold text-white">
+            {companyName.charAt(0).toUpperCase()}
+          </span>
         )}
-        <span className="truncate text-lg font-semibold">{companyName}</span>
+        <div className="min-w-0 leading-tight">
+          <div className="truncate text-[15px] font-bold">{companyName}</div>
+          <div className="truncate text-xs text-neutral-400">Asset Management</div>
+        </div>
       </div>
       <nav className="flex flex-1 flex-col gap-4 overflow-y-auto px-2 pb-4">
         {groups.map((group) => (
@@ -134,6 +142,19 @@ export function Sidebar({ companyName, logoPath }: { companyName: string; logoPa
           </div>
         ))}
       </nav>
+
+      <div className="border-t border-neutral-200 p-3 dark:border-neutral-800">
+        <div className="flex items-center gap-2.5 rounded-lg bg-neutral-50 px-3 py-2.5 dark:bg-neutral-900">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-neutral-500 shadow-sm dark:bg-neutral-800 dark:text-neutral-400">
+            <Boxes className="h-4 w-4" />
+          </span>
+          <div className="min-w-0 leading-tight">
+            <div className="text-xs font-semibold">v{packageJson.version}</div>
+            <div className="truncate text-[11px] text-neutral-400">{companyName}</div>
+            <div className="truncate text-[11px] text-neutral-400">Asset Management System</div>
+          </div>
+        </div>
+      </div>
     </aside>
   );
 }
