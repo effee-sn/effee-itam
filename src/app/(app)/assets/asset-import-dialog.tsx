@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FileUploader } from "@/components/shared/FileUploader";
 import {
@@ -68,7 +69,13 @@ export function AssetImportDialog() {
         if (!next) setSummary(null);
       }}
     >
-      <DialogTrigger render={<Button variant="outline">Import</Button>} />
+      <DialogTrigger
+        render={
+          <button className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3.5 py-2 text-sm font-medium text-neutral-700 shadow-sm transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800">
+            <Upload className="h-4 w-4 text-neutral-500" /> Import
+          </button>
+        }
+      />
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Import Assets</DialogTitle>
