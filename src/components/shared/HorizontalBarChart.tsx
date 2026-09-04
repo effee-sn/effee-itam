@@ -1,22 +1,24 @@
 "use client";
 
-import { Bar, BarChart, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 type DataPoint = { label: string; value: number };
 export type ChartRow = DataPoint & { fullLabel: string; isOther?: boolean };
 
-const ROW_HEIGHT = 34;
+const ROW_HEIGHT = 40;
 
-function truncate(s: string, n = 18): string {
+// Categorical palette — one colour per bar, readable on both light and dark cards.
+// "Other" is deliberately grey so a rollup never looks like a real category.
+const PALETTE = ["#3b82f6", "#8b5cf6", "#10b981", "#f59e0b", "#ec4899", "#06b6d4", "#6366f1", "#14b8a6"];
+const OTHER_COLOR = "#94a3b8";
+
+function truncate(s: string, n = 16): string {
   return s.length > n ? s.slice(0, n - 1) + "…" : s;
 }
 
 /**
- * Rank descending and cap the number of bars: the top items are shown individually
- * and everything past the cap is folded into a single "Other" row. This is what keeps
- * the chart a fixed size — without it, one bar was rendered per department, so the card
- * grew unbounded (36px taller for every department) as the org added more of them.
- * Exported for testing.
+ * Rank descending and cap the number of bars: top items shown individually, the rest folded into a
+ * single "Other" row so the chart is a fixed height however many categories exist. Exported for tests.
  */
 export function foldTopN(data: DataPoint[], maxItems: number): ChartRow[] {
   const sorted = [...data].sort((a, b) => b.value - a.value);
@@ -42,30 +44,35 @@ export function HorizontalBarChart({
   maxItems?: number;
 }) {
   if (data.length === 0) {
-    return <p className="text-sm text-neutral-500">No data yet.</p>;
+    return <p className="py-8 text-center text-sm text-neutral-500">No data yet.</p>;
   }
 
   const total = data.reduce((sum, d) => sum + d.value, 0);
   const rows = foldTopN(data, maxItems);
-  const height = rows.length * ROW_HEIGHT + 16;
+  const height = rows.length * ROW_HEIGHT + 34; // + room for the x-axis
 
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <BarChart data={rows} layout="vertical" margin={{ left: 8, right: 44, top: 4, bottom: 4 }}>
-        {/* X axis hidden: the value sits directly on each bar (LabelList below), which reads
-            faster than a scale on a compact dashboard card. */}
-        <XAxis type="number" hide allowDecimals={false} />
+      <BarChart data={rows} layout="vertical" margin={{ left: 8, right: 36, top: 4, bottom: 4 }} barCategoryGap="28%">
+        <CartesianGrid horizontal={false} stroke="var(--viz-grid)" strokeDasharray="3 3" />
+        <XAxis
+          type="number"
+          allowDecimals={false}
+          tick={{ fill: "var(--viz-axis)", fontSize: 11 }}
+          axisLine={{ stroke: "var(--viz-grid)" }}
+          tickLine={false}
+        />
         <YAxis
           type="category"
           dataKey="label"
-          width={120}
+          width={116}
           tick={{ fill: "var(--viz-axis)", fontSize: 12 }}
           tickFormatter={(v: string) => truncate(v)}
           axisLine={false}
           tickLine={false}
         />
         <Tooltip
-          cursor={{ fill: "var(--viz-grid)", opacity: 0.4 }}
+          cursor={{ fill: "var(--viz-grid)", opacity: 0.35 }}
           content={({ active, payload }) => {
             if (!active || !payload?.length) return null;
             const row = payload[0].payload as ChartRow;
@@ -75,9 +82,10 @@ export function HorizontalBarChart({
                 style={{
                   background: "var(--viz-tooltip-bg)",
                   border: "1px solid var(--viz-grid)",
-                  borderRadius: 6,
+                  borderRadius: 8,
                   padding: "6px 10px",
                   fontSize: 12,
+                  boxShadow: "0 4px 12px rgba(0,0,0,.08)",
                 }}
               >
                 <div style={{ fontWeight: 600 }}>{row.fullLabel}</div>
@@ -88,15 +96,14 @@ export function HorizontalBarChart({
             );
           }}
         />
-        <Bar dataKey="value" name={valueLabel} radius={[0, 4, 4, 0]} barSize={18} isAnimationActive={false}>
+        <Bar dataKey="value" name={valueLabel} radius={[0, 5, 5, 0]} barSize={18} isAnimationActive={false}>
           {rows.map((row, i) => (
-            // The "Other" aggregate is muted so it reads as a rollup, not a real category.
-            <Cell key={i} fill={row.isOther ? "var(--viz-axis)" : "var(--viz-series-1)"} />
+            <Cell key={i} fill={row.isOther ? OTHER_COLOR : PALETTE[i % PALETTE.length]} />
           ))}
           <LabelList
             dataKey="value"
             position="right"
-            style={{ fill: "var(--viz-axis)", fontSize: 11, fontVariantNumeric: "tabular-nums" }}
+            style={{ fill: "var(--viz-axis)", fontSize: 12, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}
           />
         </Bar>
       </BarChart>

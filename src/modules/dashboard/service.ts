@@ -81,6 +81,7 @@ export async function getRecentActivity(limit = 10) {
 
   return logs.map((log) => ({
     id: log.id,
+    action: log.action,
     description: `${log.user?.name ?? "System"} ${ACTION_LABELS[log.action] ?? log.action.toLowerCase()}${log.description ? ` — ${log.description}` : ""}`,
     module: log.module,
     createdAt: log.createdAt,
