@@ -157,6 +157,27 @@ export function AssetsTable({
     router.refresh();
   }
 
+  // Bulk actions on the checked rows. Requests are fired per-asset (there's no batch endpoint),
+  // then the result is summarised once and the selection cleared.
+  async function runBulk(action: "delete" | "restore") {
+    const ids = [...selected];
+    const results = await Promise.all(
+      ids.map((id) =>
+        fetch(action === "delete" ? `/api/assets/${id}` : `/api/assets/${id}/restore`, {
+          method: action === "delete" ? "DELETE" : "POST",
+        })
+          .then((r) => r.ok)
+          .catch(() => false),
+      ),
+    );
+    const ok = results.filter(Boolean).length;
+    const fail = results.length - ok;
+    if (ok) toast.success(`${action === "delete" ? "Deleted" : "Restored"} ${ok} asset(s)`);
+    if (fail) toast.error(`${fail} asset(s) could not be ${action === "delete" ? "deleted" : "restored"}`);
+    setSelected(new Set());
+    router.refresh();
+  }
+
   const middle = extraColumns.map((k) => ({ key: k, ...CELL[k] })).filter((c) => c.header);
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
@@ -180,6 +201,46 @@ export function AssetsTable({
 
   return (
     <div className="rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+      {/* Bulk-action bar — appears once one or more rows are checked. */}
+      {selected.size > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-t-xl border-b border-neutral-200 bg-blue-50 px-4 py-2.5 dark:border-neutral-800 dark:bg-blue-500/10">
+          <span className="text-sm font-medium text-blue-800 dark:text-blue-300">
+            {selected.size} selected
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSelected(new Set())}
+              className="rounded-md px-2.5 py-1.5 text-sm font-medium text-neutral-600 hover:bg-white dark:text-neutral-400 dark:hover:bg-neutral-800"
+            >
+              Clear
+            </button>
+            {showDeleted
+              ? canDelete && (
+                  <button
+                    onClick={() => runBulk("restore")}
+                    className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
+                  >
+                    <RotateCcw className="h-4 w-4" /> Restore selected
+                  </button>
+                )
+              : canDelete && (
+                  <ConfirmDialog
+                    trigger={
+                      <button className="inline-flex items-center gap-1.5 rounded-md bg-rose-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-rose-700">
+                        <Trash2 className="h-4 w-4" /> Delete selected
+                      </button>
+                    }
+                    title="Delete selected assets"
+                    description={`Delete ${selected.size} selected asset(s)? You can restore them later from Show Deleted.`}
+                    confirmLabel="Delete"
+                    destructive
+                    onConfirm={() => runBulk("delete")}
+                  />
+                )}
+          </div>
+        </div>
+      )}
+
       <div className="overflow-x-auto">
         <table className="w-full min-w-[720px] border-collapse">
           <thead>
