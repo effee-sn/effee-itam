@@ -63,7 +63,7 @@ export function Sidebar({ companyName, logoPath }: { companyName: string; logoPa
   }
 
   return (
-    <aside className="flex w-60 shrink-0 flex-col border-r border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950">
+    <aside className="flex w-60 shrink-0 flex-col bg-[#0f172a] text-slate-300">
       <div className="flex items-center gap-2.5 px-4 py-4">
         {logoPath ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -74,16 +74,18 @@ export function Sidebar({ companyName, logoPath }: { companyName: string; logoPa
           </span>
         )}
         <div className="min-w-0 leading-tight">
-          <div className="truncate text-[15px] font-bold">{companyName}</div>
-          <div className="truncate text-xs text-neutral-400">Asset Management</div>
+          <div className="truncate text-[15px] font-bold text-white">{companyName}</div>
+          <div className="truncate text-xs text-slate-400">Asset Management</div>
         </div>
       </div>
       <nav className="flex flex-1 flex-col gap-4 overflow-y-auto px-2 pb-4">
         {groups.map((group) => (
           <div key={group.name} className="flex flex-col gap-1">
-            <span className="px-3 text-xs font-semibold tracking-wide text-neutral-400 uppercase dark:text-neutral-600">
-              {group.name}
-            </span>
+            {group.name !== "Overview" && (
+              <span className="px-3 pb-1 text-[11px] font-semibold tracking-wider text-slate-500 uppercase">
+                {group.name}
+              </span>
+            )}
             {group.entries.map((entry) => {
               if (entry.kind === "item") {
                 return (
@@ -109,13 +111,13 @@ export function Sidebar({ companyName, logoPath }: { companyName: string; logoPa
                     type="button"
                     onClick={() => setOpenParents((prev) => ({ ...prev, [entry.key]: !open }))}
                     aria-expanded={open}
-                    className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                    className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                       hasActiveChild && !open
-                        ? "bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100"
-                        : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
+                        ? "bg-white/10 text-white"
+                        : "text-slate-300 hover:bg-white/10 hover:text-white"
                     }`}
                   >
-                    <ParentIcon className="h-4 w-4" />
+                    <ParentIcon className="h-[18px] w-[18px] shrink-0" />
                     {parent.label}
                     {open ? (
                       <ChevronDown className="ml-auto h-4 w-4" />
@@ -124,7 +126,7 @@ export function Sidebar({ companyName, logoPath }: { companyName: string; logoPa
                     )}
                   </button>
                   {open && (
-                    <div className="ml-3 flex flex-col gap-1 border-l pl-2 dark:border-neutral-800">
+                    <div className="ml-4 flex flex-col gap-1 border-l border-white/10 pl-2">
                       {entry.items.map((child) => (
                         <NavItem
                           key={child.href}
@@ -143,15 +145,15 @@ export function Sidebar({ companyName, logoPath }: { companyName: string; logoPa
         ))}
       </nav>
 
-      <div className="border-t border-neutral-200 p-3 dark:border-neutral-800">
-        <div className="flex items-center gap-2.5 rounded-lg bg-neutral-50 px-3 py-2.5 dark:bg-neutral-900">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-neutral-500 shadow-sm dark:bg-neutral-800 dark:text-neutral-400">
+      <div className="border-t border-white/10 p-3">
+        <div className="flex items-center gap-2.5 rounded-lg bg-white/5 px-3 py-2.5">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10 text-slate-300">
             <Boxes className="h-4 w-4" />
           </span>
           <div className="min-w-0 leading-tight">
-            <div className="text-xs font-semibold">v{packageJson.version}</div>
-            <div className="truncate text-[11px] text-neutral-400">{companyName}</div>
-            <div className="truncate text-[11px] text-neutral-400">Asset Management System</div>
+            <div className="text-xs font-semibold text-white">v{packageJson.version}</div>
+            <div className="truncate text-[11px] text-slate-400">{companyName}</div>
+            <div className="truncate text-[11px] text-slate-400">Asset Management System</div>
           </div>
         </div>
       </div>

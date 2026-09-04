@@ -5,10 +5,17 @@ import { descriptorFor } from "@/modules/assets/types/registry";
 const WARRANTY_WINDOW_DAYS = 30;
 const TREND_WINDOW_DAYS = 30;
 
-/** Percent change vs `prev`. null when there's no basis to compare against. */
+/**
+ * Percent change vs `prev`, or null when there isn't a stable enough baseline to be meaningful.
+ * A brand-new system where everything was loaded in the last 30 days has no real trend — its
+ * "growth" would be a nonsense number (e.g. 2 → 135 = +6650%) — so those cases return null and
+ * the card simply shows no arrow until the data has some history behind it.
+ */
 function trendPct(current: number, prev: number): number | null {
-  if (prev === 0) return current > 0 ? 100 : null;
-  return Math.round(((current - prev) / prev) * 100);
+  if (prev === 0) return null;
+  const pct = Math.round(((current - prev) / prev) * 100);
+  if (Math.abs(pct) > 300) return null;
+  return pct;
 }
 
 export async function getDashboardStats(actor: ScopeActor) {

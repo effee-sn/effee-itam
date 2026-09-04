@@ -25,7 +25,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <Sidebar companyName={settings.companyName} logoPath={settings.logoPath} />
         <div className="flex flex-1 flex-col overflow-hidden">
           <Topbar pendingCount={pendingCount} canViewDiscovered={canViewDiscovered} />
-          <main className="flex-1 overflow-y-auto">{children}</main>
+          <main className="flex-1 overflow-y-auto bg-[#f5f7fa] dark:bg-neutral-950">{children}</main>
         </div>
       </div>
     </SessionProvider>
