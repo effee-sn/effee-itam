@@ -6,7 +6,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import {
-  type LucideIcon,
   Building2,
   Plus,
   Pencil,
@@ -17,33 +16,6 @@ import {
   ChevronsUpDown,
   ArrowUp,
   ArrowDown,
-  FlaskConical,
-  Snowflake,
-  Disc3,
-  SlidersHorizontal,
-  Cpu,
-  Monitor,
-  Zap,
-  Settings,
-  Paintbrush,
-  IndianRupee,
-  Users,
-  Code,
-  Network,
-  Factory,
-  ShieldCheck,
-  Warehouse,
-  TrendingUp,
-  Megaphone,
-  Shield,
-  Wrench,
-  Truck,
-  ShoppingCart,
-  Microscope,
-  Cog,
-  Scale,
-  Headset,
-  ClipboardList,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { OptionSelect } from "@/components/shared/OptionSelect";
@@ -61,70 +33,6 @@ type Department = {
   name: string;
   createdAt: string;
 };
-
-const TINT = {
-  blue: "bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400",
-  emerald: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400",
-  amber: "bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400",
-  violet: "bg-violet-50 text-violet-600 dark:bg-violet-500/15 dark:text-violet-400",
-  cyan: "bg-cyan-50 text-cyan-600 dark:bg-cyan-500/15 dark:text-cyan-400",
-  rose: "bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-400",
-} as const;
-
-type Tint = keyof typeof TINT;
-
-// Keyword → icon rules, most specific first. A department whose name matches none falls back to
-// its initials, so a made-up department still gets a tidy badge.
-const ICON_RULES: { re: RegExp; Icon: LucideIcon; tint: Tint }[] = [
-  { re: /lab\b|laborator/, Icon: FlaskConical, tint: "blue" },
-  { re: /chiller|hvac|cooling|refriger/, Icon: Snowflake, tint: "cyan" },
-  { re: /coil/, Icon: Disc3, tint: "blue" },
-  { re: /(electr.*control|control.*electr)/, Icon: SlidersHorizontal, tint: "emerald" },
-  { re: /(electr.*electronic|electronic.*electr)/, Icon: Cpu, tint: "emerald" },
-  { re: /electronic/, Icon: Monitor, tint: "blue" },
-  { re: /electr/, Icon: Zap, tint: "amber" },
-  { re: /\bcontrol\b|engineering/, Icon: Settings, tint: "blue" },
-  { re: /design/, Icon: Paintbrush, tint: "violet" },
-  { re: /facilit/, Icon: Building2, tint: "blue" },
-  { re: /financ|account|payroll/, Icon: IndianRupee, tint: "blue" },
-  { re: /\bhr\b|human resource/, Icon: Users, tint: "blue" },
-  { re: /\bit\b|software|develop|\btech\b|information tech/, Icon: Code, tint: "blue" },
-  { re: /manage/, Icon: Network, tint: "blue" },
-  { re: /product|manufactur|\bplant\b|\bshop\b|fabricat|\bassembly\b/, Icon: Factory, tint: "blue" },
-  { re: /quality|\bqa\b|\bqc\b/, Icon: ShieldCheck, tint: "emerald" },
-  { re: /warehouse|inventory|\bstore\b|\bstock\b/, Icon: Warehouse, tint: "blue" },
-  { re: /\bsales\b|business dev/, Icon: TrendingUp, tint: "emerald" },
-  { re: /marketing|\bbrand\b/, Icon: Megaphone, tint: "rose" },
-  { re: /security/, Icon: Shield, tint: "blue" },
-  { re: /maintenance|repair|\bservic/, Icon: Wrench, tint: "amber" },
-  { re: /logistic|transport|dispatch|fleet/, Icon: Truck, tint: "blue" },
-  { re: /purchase|procure|supply|sourcing/, Icon: ShoppingCart, tint: "blue" },
-  { re: /research|\br ?& ?d\b/, Icon: Microscope, tint: "violet" },
-  { re: /operation|\bops\b/, Icon: Cog, tint: "blue" },
-  { re: /legal|complian/, Icon: Scale, tint: "blue" },
-  { re: /support|helpdesk|service desk/, Icon: Headset, tint: "blue" },
-  { re: /project|program/, Icon: ClipboardList, tint: "blue" },
-  { re: /network|\bnoc\b|infra/, Icon: Network, tint: "blue" },
-];
-
-function initialsOf(name: string): string {
-  const words = name.split(/\s+/).filter((w) => /[a-z0-9]/i.test(w));
-  // Single word → its first two letters (e.g. "Admin" → "AD"); multi-word → one letter each.
-  const letters = words.length <= 1 ? (words[0] ?? "").slice(0, 2) : words.map((w) => w[0]).slice(0, 2).join("");
-  return letters.toUpperCase() || "?";
-}
-
-/** The tinted badge shown before each department name — a matched icon, or the initials. */
-function DepartmentBadge({ name }: { name: string }) {
-  const lower = name.toLowerCase();
-  const rule = ICON_RULES.find((r) => r.re.test(lower));
-  const tint = rule?.tint ?? "blue";
-  return (
-    <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-sm font-semibold ${TINT[tint]}`}>
-      {rule ? <rule.Icon className="h-[18px] w-[18px]" /> : initialsOf(name)}
-    </span>
-  );
-}
 
 function DepartmentFormDialog({
   department,
@@ -417,7 +325,7 @@ export function DepartmentsTable({
   return (
     <div className="rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-3 border-b border-neutral-200 p-4 dark:border-neutral-800 [&_[data-slot=input]]:h-11! [&_[data-slot=input]]:px-3! [&_[data-slot=select-trigger]]:h-11! [&_[data-slot=select-trigger]]:px-3!">
+      <div className="flex flex-wrap items-center gap-3 border-b border-neutral-200 p-4 dark:border-neutral-800 [&_[data-slot=input]]:h-11! [&_[data-slot=select-trigger]]:h-11! [&_[data-slot=select-trigger]]:px-3!">
         <div className="relative min-w-64 flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
           <Input
@@ -517,10 +425,7 @@ export function DepartmentsTable({
                     />
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <DepartmentBadge name={row.name} />
-                      <span className="text-sm font-medium text-neutral-800 dark:text-neutral-200">{row.name}</span>
-                    </div>
+                    <span className="text-sm font-medium text-neutral-800 dark:text-neutral-200">{row.name}</span>
                   </td>
                   <td className="px-4 py-3 text-sm text-neutral-500">{new Date(row.createdAt).toLocaleDateString()}</td>
                   <td className="px-4 py-3">

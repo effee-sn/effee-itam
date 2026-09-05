@@ -425,7 +425,7 @@ export function DiscoveredTable({ rows }: { rows: DiscoveredRow[] }) {
   return (
     <div className="space-y-4">
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-3 [&_[data-slot=input]]:h-10! [&_[data-slot=input]]:px-3! [&_[data-slot=select-trigger]]:h-10! [&_[data-slot=select-trigger]]:px-3!">
+      <div className="flex flex-wrap items-center gap-3 [&_[data-slot=input]]:h-10! [&_[data-slot=select-trigger]]:h-10! [&_[data-slot=select-trigger]]:px-3!">
         <div className="relative min-w-64 flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
           <Input
