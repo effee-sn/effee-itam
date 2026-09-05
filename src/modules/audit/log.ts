@@ -15,30 +15,30 @@ export async function auditLog(entry: AuditLogEntry) {
   await prisma.auditLog.create({ data: entry });
 }
 
-export async function listAuditLogs({
-  search,
-  userId,
-  module,
-  action,
-  from,
-  to,
-  page,
-  pageSize,
-}: {
+type AuditFilters = {
   search?: string;
   userId?: number;
   module?: string;
   action?: AuditAction;
   from?: string;
   to?: string;
-  page: number;
-  pageSize: number;
-}) {
-  const where = {
+};
+
+function buildWhere({ search, userId, module, action, from, to }: AuditFilters) {
+  return {
     ...(userId ? { userId } : {}),
     ...(module ? { module } : {}),
     ...(action ? { action } : {}),
-    ...(search ? { description: { contains: search } } : {}),
+    // Matches the "Search by user, description, IP address…" box.
+    ...(search
+      ? {
+          OR: [
+            { description: { contains: search } },
+            { ipAddress: { contains: search } },
+            { user: { name: { contains: search } } },
+          ],
+        }
+      : {}),
     ...(from || to
       ? {
           createdAt: {
@@ -48,6 +48,11 @@ export async function listAuditLogs({
         }
       : {}),
   };
+}
+
+export async function listAuditLogs(filters: AuditFilters & { page: number; pageSize: number }) {
+  const { page, pageSize, ...rest } = filters;
+  const where = buildWhere(rest);
 
   const [items, total] = await Promise.all([
     prisma.auditLog.findMany({
@@ -61,6 +66,14 @@ export async function listAuditLogs({
   ]);
 
   return { items, total };
+}
+
+export async function listAuditLogsForExport(filters: AuditFilters) {
+  return prisma.auditLog.findMany({
+    where: buildWhere(filters),
+    orderBy: { createdAt: "desc" },
+    include: { user: { select: { id: true, name: true } } },
+  });
 }
 
 export async function listAuditModules() {
