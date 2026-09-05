@@ -10,6 +10,7 @@ export const createUserSchema = z.object({
   departmentId: z.number().int().positive("Department is required"),
   roleId: z.number().int().positive("Role is required"),
   designation: optionalText(150),
+  status: z.enum(["ACTIVE", "INACTIVE"]).default("ACTIVE"),
   password: z.string().min(8, "Password must be at least 8 characters"),
 });
 export type CreateUserInput = z.infer<typeof createUserSchema>;

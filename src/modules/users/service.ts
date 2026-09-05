@@ -147,6 +147,7 @@ export async function createUser(data: CreateUserInput, actorUserId: number) {
       departmentId: data.departmentId,
       roleId: data.roleId,
       designation: data.designation || null,
+      status: data.status ?? "ACTIVE",
       passwordHash,
       // An admin (or an import) is choosing this password, not the user themselves — force
       // it to be changed on first login, same as the seeded Super Admin account.
