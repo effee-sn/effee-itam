@@ -12,7 +12,7 @@ export const roleBaseSchema = z.object({
     .min(1, "Name is required")
     .max(50)
     .regex(/^[A-Za-z0-9_ ]+$/, "Use only letters, numbers, spaces and underscores"),
-  description: z.string().trim().max(255).optional().or(z.literal("")),
+  description: z.string().trim().max(500).optional().or(z.literal("")),
   // Data-visibility scope (All/Department/Owned per dimension) is modeled as ordinary
   // permission codes (e.g. "assets.scope_department"), not a separate field — see
   // src/lib/scope.ts. The refine below is defense-in-depth: the UI enforces exactly one
