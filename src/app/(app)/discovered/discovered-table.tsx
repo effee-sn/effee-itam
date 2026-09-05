@@ -16,19 +16,17 @@ import {
   ArrowUp,
   Info,
   X,
+  PackagePlus,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Field, FieldLabel } from "@/components/ui/field";
 import { OptionSelect } from "@/components/shared/OptionSelect";
 import {
   Dialog,
   DialogContent,
-  DialogFooter,
-  DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
 type DiscoveredRow = {
   id: number;
@@ -141,6 +139,13 @@ function OnboardDialog({ row }: { row: DiscoveredRow }) {
     router.push(`/assets/${json.data.asset.id}`);
   }
 
+  const summaryRows: [string, React.ReactNode][] = [
+    ["Serial", row.serialNumber ? <span className="font-mono">{row.serialNumber}</span> : <span className="text-neutral-400">Not reported</span>],
+    isMonitor
+      ? ["Found on", row.seenOn ?? "—"]
+      : ["Details", `${row.osName ?? "—"}${row.componentCount ? ` · ${row.componentCount} parts` : ""}`],
+  ];
+
   return (
     <Dialog
       open={open}
@@ -156,11 +161,38 @@ function OnboardDialog({ row }: { row: DiscoveredRow }) {
           </button>
         }
       />
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Add {info.name} to inventory</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
+      <DialogContent className="sm:max-w-md">
+        <div className="flex items-start gap-3">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400">
+            <PackagePlus className="h-5 w-5" />
+          </span>
+          <div>
+            <DialogTitle className="text-lg font-semibold">Add to Inventory</DialogTitle>
+            <DialogDescription className="text-sm text-neutral-500">
+              {isMonitor
+                ? "Create a monitor from this discovered device."
+                : "Create a computer from this discovered device."}
+            </DialogDescription>
+          </div>
+        </div>
+
+        <div className="mt-5 space-y-4">
+          {/* Device summary */}
+          <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3 dark:border-neutral-800 dark:bg-neutral-800/40">
+            <div className="mb-2 flex items-center gap-2">
+              <TypePill deviceType={row.deviceType} />
+              <span className="truncate text-sm font-medium text-neutral-800 dark:text-neutral-200">{info.name}</span>
+            </div>
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+              {summaryRows.map(([label, value]) => (
+                <div key={label} className="flex flex-col">
+                  <dt className="text-neutral-400">{label}</dt>
+                  <dd className="text-neutral-700 dark:text-neutral-300">{value}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+
           <p className="text-sm text-neutral-500">
             {isMonitor ? (
               <>
@@ -180,37 +212,111 @@ function OnboardDialog({ row }: { row: DiscoveredRow }) {
               </>
             )}
           </p>
-          {row.serialNumber ? (
-            <p className="text-xs text-neutral-500">
-              Serial: <span className="font-mono">{row.serialNumber}</span>
-            </p>
-          ) : isMonitor ? (
-            <p className="rounded-md bg-amber-50 p-2 text-xs text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+
+          {!row.serialNumber && isMonitor && (
+            <p className="rounded-lg bg-amber-50 p-2.5 text-xs text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
               This display reports no serial number, so it was identified by model and the machine
               it&apos;s plugged into. Check it isn&apos;t already in inventory before adding it — then
               type the serial from its sticker on the asset afterwards.
             </p>
-          ) : null}
-          <Field>
-            <FieldLabel htmlFor={`tag-${row.id}`}>Asset Tag</FieldLabel>
+          )}
+
+          <div>
+            <label htmlFor={`tag-${row.id}`} className="mb-1.5 block text-sm font-medium">
+              Asset Tag <span className="text-rose-500">*</span>
+            </label>
             <Input
               id={`tag-${row.id}`}
               value={tag}
               onChange={(e) => setTag(e.target.value)}
               placeholder={isMonitor ? "e.g. EII/MNT/26/002" : "e.g. EII/LAP/26/002"}
               autoFocus
+              className="h-10! px-3!"
             />
-          </Field>
+          </div>
         </div>
-        <DialogFooter>
+
+        <div className="mt-5 flex justify-end gap-2">
           <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="rounded-lg border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
             onClick={submit}
             disabled={saving || tag.trim().length === 0}
-            className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-60"
           >
-            {saving ? "Adding..." : isMonitor ? "Create monitor" : "Create computer"}
+            <PackagePlus className="h-4 w-4" />
+            {saving ? "Adding…" : isMonitor ? "Create monitor" : "Create computer"}
           </button>
-        </DialogFooter>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Themed confirm dialog for dismissing one or several discovered devices. */
+function DismissDialog({
+  trigger,
+  title,
+  description,
+  confirmLabel = "Dismiss",
+  onConfirm,
+}: {
+  trigger: React.ReactElement;
+  title: string;
+  description: string;
+  confirmLabel?: string;
+  onConfirm: () => void | Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  async function confirm() {
+    setBusy(true);
+    try {
+      await onConfirm();
+    } finally {
+      setBusy(false);
+      setOpen(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger render={trigger} />
+      <DialogContent className="sm:max-w-md">
+        <div className="flex items-start gap-3">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-400">
+            <Trash2 className="h-5 w-5" />
+          </span>
+          <div>
+            <DialogTitle className="text-lg font-semibold">{title}</DialogTitle>
+            <DialogDescription className="text-sm text-neutral-500">{description}</DialogDescription>
+          </div>
+        </div>
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="rounded-lg border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={confirm}
+            disabled={busy}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-rose-700 disabled:opacity-60"
+          >
+            <Trash2 className="h-4 w-4" />
+            {busy ? "Dismissing…" : confirmLabel}
+          </button>
+        </div>
       </DialogContent>
     </Dialog>
   );
@@ -374,7 +480,7 @@ export function DiscoveredTable({ rows }: { rows: DiscoveredRow[] }) {
             >
               Clear
             </button>
-            <ConfirmDialog
+            <DismissDialog
               trigger={
                 <button className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-sm font-medium text-rose-600 shadow-sm hover:bg-rose-50 dark:border-rose-500/30 dark:bg-neutral-900 dark:hover:bg-rose-500/10">
                   <Trash2 className="h-4 w-4" /> Dismiss selected
@@ -382,8 +488,6 @@ export function DiscoveredTable({ rows }: { rows: DiscoveredRow[] }) {
               }
               title="Dismiss selected devices"
               description={`Ignore ${selected.size} selected device(s)? They won't be onboarded. If the agent reports them again, they will reappear here.`}
-              confirmLabel="Dismiss"
-              destructive
               onConfirm={dismissSelected}
             />
           </div>
@@ -472,7 +576,7 @@ export function DiscoveredTable({ rows }: { rows: DiscoveredRow[] }) {
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-2">
                         <OnboardDialog row={row} />
-                        <ConfirmDialog
+                        <DismissDialog
                           trigger={
                             <button className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-xs font-medium text-rose-600 shadow-sm transition-colors hover:bg-rose-50 dark:border-rose-500/30 dark:bg-neutral-900 dark:hover:bg-rose-500/10">
                               <Trash2 className="h-3.5 w-3.5" /> Dismiss
@@ -480,8 +584,6 @@ export function DiscoveredTable({ rows }: { rows: DiscoveredRow[] }) {
                           }
                           title="Dismiss device"
                           description={`Ignore "${info.name}"? It won't be onboarded. If the agent reports it again, it will reappear here.`}
-                          confirmLabel="Dismiss"
-                          destructive
                           onConfirm={() => dismiss(row.id)}
                         />
                       </div>
