@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -39,7 +40,7 @@ type Vendor = {
 
 const PAGE_SIZE = 20;
 
-function VendorFormDialog({ vendor, trigger }: { vendor?: Vendor; trigger: React.ReactElement }) {
+export function VendorFormDialog({ vendor, trigger }: { vendor?: Vendor; trigger: React.ReactElement }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const isEdit = !!vendor;
@@ -294,7 +295,7 @@ export function VendorsTable({
   return (
     <div className="space-y-4">
       {/* Search */}
-      <div className="flex items-center gap-2 [&_[data-slot=input]]:h-11! [&_[data-slot=input]]:px-3!">
+      <div className="flex items-center gap-2 [&_[data-slot=input]]:h-11!">
         <div className="relative max-w-md flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
           <Input
@@ -353,7 +354,14 @@ export function VendorsTable({
                     key={vendor.id}
                     className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50/70 dark:border-neutral-800/60 dark:hover:bg-neutral-800/30"
                   >
-                    <td className={`${td} font-medium text-neutral-800 dark:text-neutral-200`}>{vendor.name}</td>
+                    <td className={td}>
+                      <Link
+                        href={`/vendors/${vendor.id}`}
+                        className="font-medium text-neutral-800 hover:text-blue-600 hover:underline dark:text-neutral-200 dark:hover:text-blue-400"
+                      >
+                        {vendor.name}
+                      </Link>
+                    </td>
                     <td className={td}>{vendor.contactPerson || <span className="text-neutral-400">—</span>}</td>
                     <td className={td}>{vendor.phone || <span className="text-neutral-400">—</span>}</td>
                     <td className={td}>{vendor.email || <span className="text-neutral-400">—</span>}</td>
