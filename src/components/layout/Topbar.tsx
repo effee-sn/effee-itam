@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import { Search, Bell, ChevronDown, KeyRound, LogOut } from "lucide-react";
+import { useState } from "react";
+import { Bell, ChevronDown, KeyRound, LogOut } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
+import { GlobalSearch } from "./GlobalSearch";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -41,28 +41,7 @@ export function Topbar({
   canViewDiscovered?: boolean;
 }) {
   const { session } = usePermissions();
-  const router = useRouter();
-  const [query, setQuery] = useState("");
   const [loggingOut, setLoggingOut] = useState(false);
-  const searchRef = useRef<HTMLInputElement>(null);
-
-  // Ctrl/Cmd + K focuses the search box.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        searchRef.current?.focus();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
-
-  function onSearch(e: React.FormEvent) {
-    e.preventDefault();
-    const q = query.trim();
-    if (q) router.push(`/assets/computers?search=${encodeURIComponent(q)}`);
-  }
 
   async function logout() {
     setLoggingOut(true);
@@ -72,20 +51,8 @@ export function Topbar({
 
   return (
     <header className="flex h-16 shrink-0 items-center gap-4 border-b border-neutral-200 bg-white px-4 dark:border-neutral-800 dark:bg-neutral-950">
-      {/* Global search */}
-      <form onSubmit={onSearch} className="relative w-full max-w-lg">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
-        <input
-          ref={searchRef}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search assets, users, departments..."
-          className="w-full rounded-lg border border-neutral-200 bg-neutral-50 py-2 pl-9 pr-16 text-sm outline-none transition-colors placeholder:text-neutral-400 focus:border-neutral-300 focus:bg-white dark:border-neutral-800 dark:bg-neutral-900 dark:focus:bg-neutral-900"
-        />
-        <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border border-neutral-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-neutral-400 sm:block dark:border-neutral-700 dark:bg-neutral-800">
-          Ctrl + K
-        </kbd>
-      </form>
+      {/* Global search (command palette) */}
+      <GlobalSearch />
 
       <div className="ml-auto flex items-center gap-1.5">
         {/* Notifications — real count of items waiting in Discovered */}
