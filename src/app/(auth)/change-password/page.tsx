@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import { getSession } from "@/lib/session";
 import { getSettings } from "@/modules/settings/service";
 import { AuthBrandPanel, AuthLogo } from "../auth-shell";
@@ -39,6 +41,14 @@ export default async function ChangePasswordPage() {
           <div className="mt-8">
             <ChangePasswordForm />
           </div>
+
+          {!session.mustChangePassword && (
+            <div className="mt-5 text-center">
+              <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700">
+                <ArrowLeft className="h-4 w-4" /> Back to Dashboard
+              </Link>
+            </div>
+          )}
 
           <div className="mt-8 flex items-center justify-center gap-3 text-xs text-slate-400">
             <span>Secure</span>
