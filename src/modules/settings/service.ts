@@ -65,3 +65,23 @@ export async function updateLogo(filePath: string, actorUserId: number) {
 
   return settings;
 }
+
+export async function removeLogo(actorUserId: number) {
+  const current = await prisma.settings.findUniqueOrThrow({ where: { id: 1 } });
+  const settings = await prisma.settings.update({ where: { id: 1 }, data: { logoPath: null } });
+
+  if (current.logoPath) {
+    await deleteUploadedFile(current.logoPath);
+  }
+
+  await auditLog({
+    userId: actorUserId,
+    action: "UPDATE",
+    module: "settings",
+    entityType: "Settings",
+    entityId: settings.id,
+    description: "Removed company logo",
+  });
+
+  return settings;
+}

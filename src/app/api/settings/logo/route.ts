@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { apiSuccess, apiError, AppError } from "@/lib/api-response";
 import { getSession } from "@/lib/session";
 import { requirePermission } from "@/modules/rbac/permissions";
-import { updateLogo } from "@/modules/settings/service";
+import { updateLogo, removeLogo } from "@/modules/settings/service";
 import { saveCompanyLogo, UploadError } from "@/lib/uploads";
 
 export async function POST(request: NextRequest) {
@@ -25,6 +25,19 @@ export async function POST(request: NextRequest) {
     if (error instanceof UploadError) {
       return apiError(new AppError("UPLOAD_ERROR", error.message, 400));
     }
+    return apiError(error);
+  }
+}
+
+export async function DELETE() {
+  try {
+    const session = await getSession();
+    if (!session) throw new AppError("UNAUTHENTICATED", "Not signed in", 401);
+    requirePermission(session, "settings.edit");
+
+    const settings = await removeLogo(session.userId);
+    return apiSuccess({ settings });
+  } catch (error) {
     return apiError(error);
   }
 }
