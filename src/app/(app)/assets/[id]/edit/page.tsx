@@ -7,6 +7,7 @@ import { descriptorFor } from "@/modules/assets/types/registry";
 import { ComputerForm } from "../../computers/computer-form";
 import { MonitorForm } from "../../monitors/monitor-form";
 import { AssetTypeForm } from "../../_shared/asset-type-form";
+import { AssetFormHeader } from "../../_shared/asset-form-header";
 
 function toDateInput(value: Date | null | undefined): string | undefined {
   return value ? new Date(value).toISOString().slice(0, 10) : undefined;
@@ -45,14 +46,16 @@ export default async function EditAssetPage({ params }: { params: Promise<{ id: 
     status: asset.status,
   };
 
-  const heading = `Edit ${descriptor.labelSingular} — ${asset.assetTag}`;
+  const header = (
+    <AssetFormHeader assetType={asset.assetType} mode="edit" assetTag={asset.assetTag} assetId={asset.id} />
+  );
 
   // Computers and Monitors have hand-grouped forms; everything else is registry-driven.
   if (asset.assetType === "COMPUTER") {
     const c = asset.computer;
     return (
       <div className="space-y-6 p-6">
-        <h1 className="text-2xl font-semibold">{heading}</h1>
+        {header}
         <ComputerForm
           asset={{
             ...base,
@@ -82,7 +85,7 @@ export default async function EditAssetPage({ params }: { params: Promise<{ id: 
     const m = asset.monitor;
     return (
       <div className="space-y-6 p-6">
-        <h1 className="text-2xl font-semibold">{heading}</h1>
+        {header}
         <MonitorForm
           asset={{
             ...base,
@@ -131,7 +134,7 @@ export default async function EditAssetPage({ params }: { params: Promise<{ id: 
 
   return (
     <div className="space-y-6 p-6">
-      <h1 className="text-2xl font-semibold">{heading}</h1>
+      {header}
       <AssetTypeForm
         assetType={asset.assetType}
         asset={{ ...base, ...detail }}

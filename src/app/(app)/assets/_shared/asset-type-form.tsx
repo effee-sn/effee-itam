@@ -3,16 +3,22 @@
 import { useForm, Controller, type FieldValues } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { FileText, Info, Network, UserCog, ShieldCheck, Truck, Plus, Save } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { OptionSelect } from "@/components/shared/OptionSelect";
 import { useGlobalProgress } from "@/components/shared/GlobalProgress";
 import { assetSchemaFor } from "@/modules/assets/types/schemas";
 import { descriptorFor, type FieldDescriptor } from "@/modules/assets/types/registry";
 import type { AssetType } from "@/generated/prisma/client";
-import { FormSection as Section, CheckboxField } from "./form-section";
+import {
+  FormSection as Section,
+  FormGrid,
+  FormActions,
+  NotesCard,
+  CheckboxField,
+  RequiredMark,
+} from "./form-section";
 
 type Option = { id: number; name: string };
 
@@ -71,7 +77,7 @@ export function AssetTypeForm({
   } = useForm<FieldValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(assetSchemaFor(assetType)) as any,
-    defaultValues: asset ?? { assetType },
+    defaultValues: asset ?? { assetType, status: "AVAILABLE" },
   });
 
   const formErrors = errors as Record<string, { message?: string } | undefined>;
@@ -144,99 +150,37 @@ export function AssetTypeForm({
   const showsPurchase = shows("purchaseDate");
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="max-w-4xl space-y-5">
-      <Section title="Identification">
-        <Field>
-          <FieldLabel htmlFor="assetTag">Asset Tag</FieldLabel>
-          <Input id="assetTag" placeholder="e.g. EI-COM-014" {...register("assetTag")} />
-          <FieldError errors={[formErrors.assetTag]} />
-          <p className="text-xs text-neutral-500">
-            Whatever is on the label. Must be unique.
-          </p>
-        </Field>
-        <Field>
-          <FieldLabel htmlFor="serialNumber">{labelFor("serialNumber", "Serial Number")}</FieldLabel>
-          <Input id="serialNumber" {...register("serialNumber")} />
-          <FieldError errors={[formErrors.serialNumber]} />
-        </Field>
-        {shows("brand") && (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      <FormGrid>
+        <Section icon={FileText} title="Identification" description="Basic information to identify this asset">
           <Field>
-            <FieldLabel htmlFor="brand">Manufacturer</FieldLabel>
-            <Input id="brand" {...register("brand")} />
-            <FieldError errors={[formErrors.brand]} />
+            <FieldLabel htmlFor="assetTag">Asset Tag<RequiredMark /></FieldLabel>
+            <Input id="assetTag" placeholder="e.g. EII-COM-014" {...register("assetTag")} />
+            <FieldError errors={[formErrors.assetTag]} />
+            <p className="text-xs text-neutral-500">Whatever is on the label. Must be unique.</p>
           </Field>
-        )}
-        {shows("model") && (
           <Field>
-            <FieldLabel htmlFor="model">Model</FieldLabel>
-            <Input id="model" {...register("model")} />
-            <FieldError errors={[formErrors.model]} />
+            <FieldLabel htmlFor="serialNumber">{labelFor("serialNumber", "Serial Number")}</FieldLabel>
+            <Input id="serialNumber" {...register("serialNumber")} />
+            <FieldError errors={[formErrors.serialNumber]} />
           </Field>
-        )}
-      </Section>
-
-      {descriptor.fields.length > 0 && (
-        <Section title={`${descriptor.labelSingular} Details`}>
-          {descriptor.fields.map((field) => (
-            <DetailField key={field.key} field={field} />
-          ))}
-        </Section>
-      )}
-
-      {showsNetwork && (
-        <Section title="Network">
-          {shows("hostname") && (
+          {shows("brand") && (
             <Field>
-              <FieldLabel htmlFor="hostname">Hostname</FieldLabel>
-              <Input id="hostname" {...register("hostname")} />
-              <FieldError errors={[formErrors.hostname]} />
+              <FieldLabel htmlFor="brand">Manufacturer</FieldLabel>
+              <Input id="brand" {...register("brand")} />
+              <FieldError errors={[formErrors.brand]} />
             </Field>
           )}
-          {shows("macAddress") && (
+          {shows("model") && (
             <Field>
-              <FieldLabel htmlFor="macAddress">MAC Address</FieldLabel>
-              <Input id="macAddress" placeholder="00:1A:2B:3C:4D:5E" {...register("macAddress")} />
-              <FieldError errors={[formErrors.macAddress]} />
-            </Field>
-          )}
-          {shows("ipAddress") && (
-            <Field>
-              <FieldLabel htmlFor="ipAddress">IP Address</FieldLabel>
-              <Input id="ipAddress" placeholder="e.g. 192.168.1.50" {...register("ipAddress")} />
-              <FieldError errors={[formErrors.ipAddress]} />
+              <FieldLabel htmlFor="model">Model</FieldLabel>
+              <Input id="model" {...register("model")} />
+              <FieldError errors={[formErrors.model]} />
             </Field>
           )}
         </Section>
-      )}
 
-      <Section
-        title="Assignment"
-        description={
-          isEdit
-            ? undefined
-            : `Assign this ${descriptor.labelSingular.toLowerCase()} to a person after saving — that keeps a proper assignment history.`
-        }
-      >
-        <Field>
-          <FieldLabel>Department</FieldLabel>
-          <Controller
-            control={control}
-            name="departmentId"
-            render={({ field }) => (
-              <OptionSelect
-                value={field.value ? String(field.value) : "none"}
-                onValueChange={(value) => field.onChange(value === "none" ? undefined : Number(value))}
-                options={[
-                  { value: "none", label: "— None —" },
-                  ...departments.map((d) => ({ value: String(d.id), label: d.name })),
-                ]}
-                placeholder="Select department"
-              />
-            )}
-          />
-          <FieldError errors={[formErrors.departmentId]} />
-        </Field>
-        {isEdit && (
+        <Section icon={UserCog} title="Status & Assignment" description="Current status and assignment details">
           <Field>
             <FieldLabel>Status</FieldLabel>
             <Controller
@@ -244,7 +188,7 @@ export function AssetTypeForm({
               name="status"
               render={({ field }) => (
                 <OptionSelect
-                  value={(field.value as string) ?? ""}
+                  value={(field.value as string) ?? "AVAILABLE"}
                   onValueChange={field.onChange}
                   options={STATUS_OPTIONS}
                   placeholder="Select status"
@@ -252,74 +196,132 @@ export function AssetTypeForm({
               )}
             />
             <FieldError errors={[formErrors.status]} />
+            <p className="text-xs text-neutral-500">Current availability status.</p>
           </Field>
-        )}
-      </Section>
+          <Field>
+            <FieldLabel>Department</FieldLabel>
+            <Controller
+              control={control}
+              name="departmentId"
+              render={({ field }) => (
+                <OptionSelect
+                  value={field.value ? String(field.value) : "none"}
+                  onValueChange={(value) => field.onChange(value === "none" ? undefined : Number(value))}
+                  options={[
+                    { value: "none", label: "— None —" },
+                    ...departments.map((d) => ({ value: String(d.id), label: d.name })),
+                  ]}
+                  placeholder="Select department"
+                />
+              )}
+            />
+            <FieldError errors={[formErrors.departmentId]} />
+            <p className="text-xs text-neutral-500">Assign to a department.</p>
+          </Field>
+        </Section>
 
-      <Section title={showsPurchase ? "Purchase & Warranty" : "Supplier"}>
-        <Field>
-          <FieldLabel>{labelFor("vendorId", "Vendor")}</FieldLabel>
-          <Controller
-            control={control}
-            name="vendorId"
-            render={({ field }) => (
-              <OptionSelect
-                value={field.value ? String(field.value) : "none"}
-                onValueChange={(value) => field.onChange(value === "none" ? undefined : Number(value))}
-                options={[
-                  { value: "none", label: "— None —" },
-                  ...vendors.map((v) => ({ value: String(v.id), label: v.name })),
-                ]}
-                placeholder="Select vendor"
-              />
+        {descriptor.fields.length > 0 && (
+          <Section
+            icon={Info}
+            title={`${descriptor.labelSingular} Details`}
+            description={`Fields specific to a ${descriptor.labelSingular.toLowerCase()}`}
+          >
+            {descriptor.fields.map((field) => (
+              <DetailField key={field.key} field={field} />
+            ))}
+          </Section>
+        )}
+
+        {showsNetwork && (
+          <Section icon={Network} title="Network" description="Network and domain information">
+            {shows("hostname") && (
+              <Field>
+                <FieldLabel htmlFor="hostname">Hostname</FieldLabel>
+                <Input id="hostname" {...register("hostname")} />
+                <FieldError errors={[formErrors.hostname]} />
+              </Field>
             )}
-          />
-          <FieldError errors={[formErrors.vendorId]} />
-        </Field>
-        {showsPurchase && (
-          <>
-            <Field>
-              <FieldLabel htmlFor="invoiceNumber">Invoice Number</FieldLabel>
-              <Input id="invoiceNumber" {...register("invoiceNumber")} />
-              <FieldError errors={[formErrors.invoiceNumber]} />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="purchaseDate">Purchase Date</FieldLabel>
-              <Input id="purchaseDate" type="date" {...register("purchaseDate")} />
-              <FieldError errors={[formErrors.purchaseDate]} />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="cost">Cost</FieldLabel>
-              <Input id="cost" inputMode="decimal" placeholder="0.00" {...register("cost")} />
-              <FieldError errors={[formErrors.cost]} />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="warrantyStart">Warranty Start</FieldLabel>
-              <Input id="warrantyStart" type="date" {...register("warrantyStart")} />
-              <FieldError errors={[formErrors.warrantyStart]} />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="warrantyEnd">Warranty End</FieldLabel>
-              <Input id="warrantyEnd" type="date" {...register("warrantyEnd")} />
-              <FieldError errors={[formErrors.warrantyEnd]} />
-            </Field>
-          </>
+            {shows("macAddress") && (
+              <Field>
+                <FieldLabel htmlFor="macAddress">MAC Address</FieldLabel>
+                <Input id="macAddress" placeholder="e.g. 00:1A:2B:3C:4D:5E" {...register("macAddress")} />
+                <FieldError errors={[formErrors.macAddress]} />
+              </Field>
+            )}
+            {shows("ipAddress") && (
+              <Field>
+                <FieldLabel htmlFor="ipAddress">IP Address</FieldLabel>
+                <Input id="ipAddress" placeholder="e.g. 192.168.1.50" {...register("ipAddress")} />
+                <FieldError errors={[formErrors.ipAddress]} />
+              </Field>
+            )}
+          </Section>
         )}
-      </Section>
 
-      <Section title="Notes">
-        <Field className="sm:col-span-2">
-          <FieldLabel htmlFor="notes">Notes</FieldLabel>
-          <Textarea id="notes" rows={4} {...register("notes")} />
-          <FieldError errors={[formErrors.notes]} />
-        </Field>
-      </Section>
+        <Section
+          icon={showsPurchase ? ShieldCheck : Truck}
+          title={showsPurchase ? "Purchase & Warranty" : "Supplier"}
+          description={showsPurchase ? "Procurement and warranty details" : "Who supplied this asset"}
+        >
+          <Field>
+            <FieldLabel>{labelFor("vendorId", "Vendor")}</FieldLabel>
+            <Controller
+              control={control}
+              name="vendorId"
+              render={({ field }) => (
+                <OptionSelect
+                  value={field.value ? String(field.value) : "none"}
+                  onValueChange={(value) => field.onChange(value === "none" ? undefined : Number(value))}
+                  options={[
+                    { value: "none", label: "— None —" },
+                    ...vendors.map((v) => ({ value: String(v.id), label: v.name })),
+                  ]}
+                  placeholder="Select vendor"
+                />
+              )}
+            />
+            <FieldError errors={[formErrors.vendorId]} />
+          </Field>
+          {showsPurchase && (
+            <>
+              <Field>
+                <FieldLabel htmlFor="invoiceNumber">Invoice Number</FieldLabel>
+                <Input id="invoiceNumber" placeholder="e.g. INV-001" {...register("invoiceNumber")} />
+                <FieldError errors={[formErrors.invoiceNumber]} />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="purchaseDate">Purchase Date</FieldLabel>
+                <Input id="purchaseDate" type="date" {...register("purchaseDate")} />
+                <FieldError errors={[formErrors.purchaseDate]} />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="cost">Cost</FieldLabel>
+                <Input id="cost" inputMode="decimal" placeholder="0.00" {...register("cost")} />
+                <FieldError errors={[formErrors.cost]} />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="warrantyStart">Warranty Start</FieldLabel>
+                <Input id="warrantyStart" type="date" {...register("warrantyStart")} />
+                <FieldError errors={[formErrors.warrantyStart]} />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="warrantyEnd">Warranty End</FieldLabel>
+                <Input id="warrantyEnd" type="date" {...register("warrantyEnd")} />
+                <FieldError errors={[formErrors.warrantyEnd]} />
+              </Field>
+            </>
+          )}
+        </Section>
 
-      <div className="flex items-center gap-3">
-        <Button type="submit" disabled={pending}>
-          {pending ? "Saving..." : isEdit ? "Save Changes" : `Create ${descriptor.labelSingular}`}
-        </Button>
-      </div>
+        <NotesCard control={control} register={register} />
+      </FormGrid>
+
+      <FormActions
+        pending={pending}
+        submitLabel={isEdit ? "Save Changes" : `Create ${descriptor.labelSingular}`}
+        submitIcon={isEdit ? Save : Plus}
+        cancelHref={isEdit && asset ? `/assets/${asset.id}` : `/assets/${descriptor.slug}`}
+      />
     </form>
   );
 }
