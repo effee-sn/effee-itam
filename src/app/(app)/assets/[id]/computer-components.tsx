@@ -19,7 +19,6 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { OptionSelect } from "@/components/shared/OptionSelect";
@@ -160,9 +159,13 @@ function AddComponentDialog({ assetId }: { assetId: number }) {
             <FieldError errors={[errors.serialNumber]} />
           </Field>
           <DialogFooter>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Adding..." : "Add"}
-            </Button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-60"
+            >
+              {isSubmitting ? "Adding…" : "Add Component"}
+            </button>
           </DialogFooter>
         </form>
       </DialogContent>

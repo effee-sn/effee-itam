@@ -1,5 +1,4 @@
-import { PageHeader } from "@/components/shared/PageHeader";
-import { ExportButton } from "@/components/shared/ExportButton";
+import { Boxes, FileSpreadsheet } from "lucide-react";
 import { requirePageSession } from "@/modules/rbac/permissions";
 import { listAssets, countAssetsByType } from "@/modules/assets/service";
 import { ASSET_TYPES_ORDERED, descriptorForSlug, descriptorFor } from "@/modules/assets/types/registry";
@@ -49,13 +48,27 @@ export default async function MyAssetsPage({
     count: typeCounts[d.assetType] ?? 0,
   }));
 
+  const Header = ({ action }: { action?: React.ReactNode }) => (
+    <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="flex items-start gap-3">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400">
+          <Boxes className="h-6 w-6" />
+        </span>
+        <div>
+          <h1 className="text-2xl font-semibold leading-tight">{title}</h1>
+          <p className="mt-1 text-sm text-neutral-500">{description}</p>
+        </div>
+      </div>
+      {action}
+    </div>
+  );
+
   // Nothing assigned at all — no tabs, no table.
   if (typeTabs.length === 0) {
     return (
-      <div className="space-y-6 p-6">
-        <PageHeader title={title} />
-        <p className="-mt-3 text-sm text-neutral-500">{description}</p>
-        <div className="rounded-md border p-8 text-center text-sm text-neutral-500">
+      <div className="space-y-5 p-6">
+        <Header />
+        <div className="rounded-xl border border-neutral-200 bg-white p-10 text-center text-sm text-neutral-500 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
           {scope === "DEPARTMENT"
             ? "No assets are assigned to anyone in your department yet."
             : "You don't have any assets assigned to you yet."}
@@ -94,14 +107,17 @@ export default async function MyAssetsPage({
   exportParams.set("type", selectedTab.slug);
 
   return (
-    <div className="space-y-6 p-6">
-      <PageHeader
-        title={title}
+    <div className="space-y-5 p-6">
+      <Header
         action={
-          <ExportButton href={`/api/assets/export?format=xlsx&${exportParams.toString()}`} label="Export Excel" />
+          <a
+            href={`/api/assets/export?format=xlsx&${exportParams.toString()}`}
+            className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3.5 py-2 text-sm font-medium text-neutral-700 shadow-sm transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          >
+            <FileSpreadsheet className="h-4 w-4 text-emerald-600" /> Export Excel
+          </a>
         }
       />
-      <p className="-mt-3 text-sm text-neutral-500">{description}</p>
       {/* A single tab is just a non-interactive label, so only show the strip to switch between types. */}
       {typeTabs.length > 1 && <AssetTypeTabs tabs={typeTabs} current={selectedTab.slug} />}
       <AssetFilters currentStatus={params.status} showDeleted={false} canViewDeleted={false} />
