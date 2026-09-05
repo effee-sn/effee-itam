@@ -74,9 +74,7 @@ export function SettingsTabs({
 
       {showBackup && (
         <TabsContent value="backup">
-          <div className="max-w-4xl">
-            <BackupRestore databaseName={databaseName!} />
-          </div>
+          <BackupRestore databaseName={databaseName!} />
         </TabsContent>
       )}
     </Tabs>
