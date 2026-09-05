@@ -10,6 +10,8 @@ export type Report = {
   title: string;
   headers: string[];
   rows: (string | number)[][];
+  // Asset id per row (aligned with `rows`), so the UI can link each row to its asset.
+  ids: number[];
 };
 
 async function assetInventoryReport(actor: ScopeActor): Promise<Report> {
@@ -17,6 +19,7 @@ async function assetInventoryReport(actor: ScopeActor): Promise<Report> {
   return {
     title: "Asset Inventory",
     headers: ["Asset Tag", "Type", "Brand", "Model", "Vendor", "Department", "Assigned To", "Status", "Cost"],
+    ids: assets.map((asset) => asset.id),
     rows: assets.map((asset) => [
       asset.assetTag,
       descriptorFor(asset.assetType).labelSingular,
@@ -41,6 +44,7 @@ async function departmentAssetsReport(actor: ScopeActor): Promise<Report> {
   return {
     title: "Department Assets",
     headers: ["Department", "Asset Tag", "Type", "Brand", "Model", "Assigned To", "Status"],
+    ids: sorted.map((asset) => asset.id),
     rows: sorted.map((asset) => [
       asset.department?.name ?? "Unassigned",
       asset.assetTag,
@@ -61,6 +65,7 @@ async function warrantyExpiryReport(actor: ScopeActor): Promise<Report> {
   return {
     title: "Warranty Expiry",
     headers: ["Asset Tag", "Type", "Assigned To", "Warranty Start", "Warranty End"],
+    ids: withWarranty.map((asset) => asset.id),
     rows: withWarranty.map((asset) => [
       asset.assetTag,
       descriptorFor(asset.assetType).labelSingular,
