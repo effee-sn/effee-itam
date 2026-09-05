@@ -326,7 +326,7 @@ export function DepartmentsTable({
     <div className="rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3 border-b border-neutral-200 p-4 dark:border-neutral-800 [&_[data-slot=input]]:h-11! [&_[data-slot=select-trigger]]:h-11! [&_[data-slot=select-trigger]]:px-3!">
-        <div className="relative min-w-64 flex-1">
+        <div className="relative w-full max-w-md flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
           <Input
             value={search}
@@ -335,7 +335,7 @@ export function DepartmentsTable({
             className="bg-neutral-50 pl-9! dark:bg-neutral-800/50"
           />
         </div>
-        <div className="w-52">
+        <div className="w-52 sm:ml-auto">
           <OptionSelect
             value={pick}
             onValueChange={setPick}
