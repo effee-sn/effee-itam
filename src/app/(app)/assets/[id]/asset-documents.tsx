@@ -3,10 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { FileText } from "lucide-react";
+import { FileText, Files, Trash2 } from "lucide-react";
 import { FileUploader } from "@/components/shared/FileUploader";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { Button } from "@/components/ui/button";
 
 type AssetDocument = { id: number; filePath: string; label: string | null };
 
@@ -53,30 +52,41 @@ export function AssetDocuments({
   }
 
   return (
-    <div className="space-y-3">
-      <h2 className="text-lg font-medium">Documents</h2>
+    <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+      <div className="mb-4 flex items-start gap-3">
+        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400">
+          <Files className="h-5 w-5" />
+        </span>
+        <div>
+          <h2 className="font-semibold leading-tight">Documents</h2>
+          <p className="text-xs text-neutral-500">Invoices, warranties and other files for this asset</p>
+        </div>
+      </div>
+
       {documents.length > 0 && (
-        <ul className="space-y-2">
+        <ul className="mb-4 space-y-2">
           {documents.map((document) => (
             <li
               key={document.id}
-              className="flex items-center justify-between rounded-md border px-3 py-2 text-sm"
+              className="flex items-center justify-between gap-3 rounded-lg border border-neutral-200 px-3 py-2.5 text-sm dark:border-neutral-800"
             >
               <a
                 href={document.filePath}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 hover:underline"
+                className="flex min-w-0 items-center gap-2.5 hover:text-blue-600 dark:hover:text-blue-400"
               >
-                <FileText className="h-4 w-4" />
-                {document.filePath.split("/").pop()}
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
+                  <FileText className="h-4 w-4" />
+                </span>
+                <span className="truncate font-medium">{document.filePath.split("/").pop()}</span>
               </a>
               {canEdit && (
                 <ConfirmDialog
                   trigger={
-                    <Button variant="ghost" size="sm" className="text-destructive">
-                      Delete
-                    </Button>
+                    <button title="Delete" className="shrink-0 rounded-md p-1.5 text-rose-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   }
                   title="Delete document"
                   description="Are you sure you want to delete this document?"
@@ -97,6 +107,7 @@ export function AssetDocuments({
           onFilesSelected={handleUpload}
         />
       )}
+      {documents.length === 0 && !canEdit && <p className="text-sm text-neutral-500">No documents uploaded.</p>}
     </div>
   );
 }

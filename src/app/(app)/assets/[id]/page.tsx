@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Info, Pencil, MapPin, User, Building2, CalendarPlus, CalendarClock, Clock } from "lucide-react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Info, Pencil, MapPin, User, Building2, CalendarPlus, CalendarClock, Clock, History } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { requirePageSession, hasPermission } from "@/modules/rbac/permissions";
 import { getAssetById } from "@/modules/assets/service";
@@ -262,36 +261,44 @@ export default async function AssetDetailPage({ params }: { params: Promise<{ id
         </TabsContent>
         {canViewAssignmentHistory && (
           <TabsContent value="assignment">
-            {history.length === 0 ? (
-              <div className={`${cardClass} text-center text-sm text-neutral-500`}>No assignment history yet.</div>
-            ) : (
-              <div className="overflow-x-auto rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Action</TableHead>
-                      <TableHead>From</TableHead>
-                      <TableHead>To</TableHead>
-                      <TableHead>Performed By</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Notes</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {history.map((entry) => (
-                      <TableRow key={entry.id}>
-                        <TableCell>{ACTION_LABELS[entry.action] ?? entry.action}</TableCell>
-                        <TableCell>{entry.fromUser?.name ?? "—"}</TableCell>
-                        <TableCell>{entry.toUser?.name ?? "—"}</TableCell>
-                        <TableCell>{entry.performedBy.name}</TableCell>
-                        <TableCell>{new Date(entry.actionDate).toLocaleString()}</TableCell>
-                        <TableCell>{entry.notes ?? "—"}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+            <div className="rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+              <div className="flex items-start gap-3 p-5">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400">
+                  <History className="h-5 w-5" />
+                </span>
+                <div>
+                  <h2 className="font-semibold leading-tight">Assignment History</h2>
+                  <p className="text-xs text-neutral-500">Who held this asset and when</p>
+                </div>
               </div>
-            )}
+              {history.length === 0 ? (
+                <p className="px-5 pb-6 text-sm text-neutral-500">No assignment history yet.</p>
+              ) : (
+                <div className="overflow-x-auto border-t border-neutral-200 dark:border-neutral-800">
+                  <table className="w-full min-w-[720px] border-collapse">
+                    <thead>
+                      <tr className="border-b border-neutral-200 dark:border-neutral-800">
+                        {["Action", "From", "To", "Performed By", "Date", "Notes"].map((h) => (
+                          <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-neutral-500">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {history.map((entry) => (
+                        <tr key={entry.id} className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50 dark:border-neutral-800/70 dark:hover:bg-neutral-800/40">
+                          <td className="px-4 py-3 text-sm font-medium text-neutral-900 dark:text-neutral-100">{ACTION_LABELS[entry.action] ?? entry.action}</td>
+                          <td className="px-4 py-3 text-sm text-neutral-700 dark:text-neutral-300">{entry.fromUser?.name ?? "—"}</td>
+                          <td className="px-4 py-3 text-sm text-neutral-700 dark:text-neutral-300">{entry.toUser?.name ?? "—"}</td>
+                          <td className="px-4 py-3 text-sm text-neutral-700 dark:text-neutral-300">{entry.performedBy.name}</td>
+                          <td className="px-4 py-3 text-sm text-neutral-700 dark:text-neutral-300">{new Date(entry.actionDate).toLocaleString()}</td>
+                          <td className="px-4 py-3 text-sm text-neutral-700 dark:text-neutral-300">{entry.notes ?? "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </TabsContent>
         )}
       </Tabs>

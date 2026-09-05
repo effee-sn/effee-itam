@@ -3,24 +3,24 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { type LucideIcon, UserPlus, Undo2, ArrowLeftRight } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
-import { Field, FieldLabel } from "@/components/ui/field";
 import {
   Dialog,
   DialogContent,
-  DialogFooter,
-  DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { OptionSelect } from "@/components/shared/OptionSelect";
+import { UserPicker } from "./user-picker";
 
 type UserOption = { id: number; name: string; employeeId: string };
 
 function ActionDialog({
   trigger,
   title,
+  subtitle,
+  icon: Icon,
   needsUser,
   users,
   excludeUserId,
@@ -28,6 +28,8 @@ function ActionDialog({
 }: {
   trigger: React.ReactNode;
   title: string;
+  subtitle: string;
+  icon: LucideIcon;
   needsUser: boolean;
   users: UserOption[];
   excludeUserId?: number | null;
@@ -41,6 +43,12 @@ function ActionDialog({
 
   const availableUsers = users.filter((user) => user.id !== excludeUserId);
 
+  function reset() {
+    setToUserId("");
+    setNotes("");
+    setError(null);
+  }
+
   async function handleSubmit() {
     if (needsUser && !toUserId) {
       setError("Please select a user");
@@ -52,8 +60,7 @@ function ActionDialog({
     setSubmitting(false);
     if (ok) {
       setOpen(false);
-      setToUserId("");
-      setNotes("");
+      reset();
     }
   }
 
@@ -62,48 +69,70 @@ function ActionDialog({
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
-        if (next) {
-          setToUserId("");
-          setNotes("");
-          setError(null);
-        }
+        if (next) reset();
       }}
     >
       <DialogTrigger render={trigger as React.ReactElement} />
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          {needsUser && (
-            <Field>
-              <FieldLabel>User</FieldLabel>
-              <OptionSelect
-                value={toUserId}
-                onValueChange={setToUserId}
-                options={availableUsers.map((user) => ({
-                  value: String(user.id),
-                  label: `${user.name} (${user.employeeId})`,
-                }))}
-                placeholder="Select user"
-              />
-            </Field>
-          )}
-          <Field>
-            <FieldLabel>Notes</FieldLabel>
-            <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={3} />
-          </Field>
-          {error && <p className="text-sm text-destructive">{error}</p>}
+      <DialogContent className="sm:max-w-md">
+        <div className="flex items-start gap-3">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400">
+            <Icon className="h-5 w-5" />
+          </span>
+          <div>
+            <DialogTitle className="text-lg font-semibold">{title}</DialogTitle>
+            <DialogDescription className="text-sm text-neutral-500">{subtitle}</DialogDescription>
+          </div>
         </div>
-        <DialogFooter>
-          <Button onClick={handleSubmit} disabled={submitting}>
-            {submitting ? "Saving..." : "Confirm"}
-          </Button>
-        </DialogFooter>
+
+        <div className="mt-5 space-y-4">
+          {needsUser && (
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">
+                User <span className="text-rose-500">*</span>
+              </label>
+              <UserPicker users={availableUsers} value={toUserId} onChange={setToUserId} placeholder="Search users..." />
+            </div>
+          )}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium">Notes</label>
+            <Textarea
+              value={notes}
+              maxLength={500}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+              placeholder="Add notes (optional)..."
+            />
+            <div className="mt-1 text-right text-xs text-neutral-400">{notes.length}/500</div>
+          </div>
+          {error && <p className="text-sm text-rose-600">{error}</p>}
+        </div>
+
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="rounded-lg border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-60"
+          >
+            {submitting ? "Saving…" : "Confirm"}
+          </button>
+        </div>
       </DialogContent>
     </Dialog>
   );
 }
+
+const darkBtn =
+  "inline-flex items-center gap-1.5 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200";
+const outlineBtn =
+  "inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 shadow-sm transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800";
 
 export function AssetAssignmentActions({
   assetId,
@@ -146,8 +175,14 @@ export function AssetAssignmentActions({
     <div className="flex gap-2">
       {status === "AVAILABLE" && canAssign && (
         <ActionDialog
-          trigger={<Button size="sm">Assign</Button>}
+          trigger={
+            <button className={darkBtn}>
+              <UserPlus className="h-4 w-4" /> Assign
+            </button>
+          }
           title="Assign Asset"
+          subtitle="Assign this asset to a user"
+          icon={UserPlus}
           needsUser
           users={users}
           onSubmit={(data) => callApi("assign", { toUserId: data.toUserId, notes: data.notes }, "Asset assigned")}
@@ -156,11 +191,13 @@ export function AssetAssignmentActions({
       {status === "ASSIGNED" && canReturn && (
         <ActionDialog
           trigger={
-            <Button size="sm" variant="outline">
-              Return
-            </Button>
+            <button className={outlineBtn}>
+              <Undo2 className="h-4 w-4" /> Return
+            </button>
           }
           title="Return Asset"
+          subtitle="Return this asset to the available pool"
+          icon={Undo2}
           needsUser={false}
           users={users}
           onSubmit={(data) => callApi("return", { notes: data.notes }, "Asset returned")}
@@ -169,11 +206,13 @@ export function AssetAssignmentActions({
       {status === "ASSIGNED" && canAssign && (
         <ActionDialog
           trigger={
-            <Button size="sm" variant="outline">
-              Transfer
-            </Button>
+            <button className={outlineBtn}>
+              <ArrowLeftRight className="h-4 w-4" /> Transfer
+            </button>
           }
           title="Transfer Asset"
+          subtitle="Transfer this asset to another user"
+          icon={ArrowLeftRight}
           needsUser
           users={users}
           excludeUserId={currentAssignedUserId}
