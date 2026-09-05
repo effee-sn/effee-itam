@@ -1,7 +1,7 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, useTransition, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { createContext, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 type GlobalProgressContextValue = {
   isPending: boolean;
@@ -18,42 +18,76 @@ export function useGlobalProgress() {
   return ctx;
 }
 
+// If a navigation never commits (deduped, aborted, or the click didn't actually navigate), the
+// bar would otherwise hang forever. This ceiling guarantees it always clears itself.
+const FAILSAFE_MS = 8000;
+
+/**
+ * Watches the committed route (path + query) and reports when it changes. Isolated in its own
+ * component so `useSearchParams` sits behind a Suspense boundary — required because the provider
+ * lives in the root layout, which some pages prerender statically.
+ */
+function RouteWatcher({ onArrive }: { onArrive: () => void }) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const key = `${pathname}?${searchParams.toString()}`;
+  useEffect(() => {
+    onArrive();
+  }, [key, onArrive]);
+  return null;
+}
+
 export function GlobalProgressProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const [isTransitionPending, startTransition] = useTransition();
+
+  // `navigating` tracks a route change in flight; `manualCount` tracks explicit non-navigation
+  // work (exports, uploads) that wants to show the bar. They're kept separate so a stuck manual
+  // op can't be cleared by a route change and vice-versa.
+  const [navigating, setNavigating] = useState(false);
   const [manualCount, setManualCount] = useState(0);
+  const failsafe = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Stable identities are required (used as useEffect/useMemo dependencies here and by
-  // callers) — an unstable function/object here would re-run effects every render.
-  const start = useCallback(() => {
-    setManualCount((count) => count + 1);
-  }, []);
-  const stop = useCallback(() => {
-    setManualCount((count) => Math.max(0, count - 1));
+  const beginNav = useCallback(() => {
+    setNavigating(true);
+    if (failsafe.current) clearTimeout(failsafe.current);
+    failsafe.current = setTimeout(() => setNavigating(false), FAILSAFE_MS);
   }, []);
 
-  // The transition (and its isPending) is owned by this provider, which is mounted once
-  // at the root and never unmounts — unlike the component that calls navigate() (e.g. a
-  // form on the page being navigated away FROM), which unmounts partway through the very
-  // navigation it triggered. If each caller tracked its own local useTransition instead,
-  // its "pending -> false" effect would never get a chance to fire post-unmount, leaving
-  // the bar stuck forever. Routing all navigation through one long-lived transition avoids
-  // that class of bug entirely.
+  const endNav = useCallback(() => {
+    setNavigating(false);
+    if (failsafe.current) {
+      clearTimeout(failsafe.current);
+      failsafe.current = null;
+    }
+  }, []);
+
+  useEffect(() => () => {
+    if (failsafe.current) clearTimeout(failsafe.current);
+  }, []);
+
+  const start = useCallback(() => setManualCount((c) => c + 1), []);
+  const stop = useCallback(() => setManualCount((c) => Math.max(0, c - 1)), []);
+
+  // Programmatic navigation (e.g. after a form save). We show the bar and let the router do the
+  // navigation natively — the route-change effect above hides it once the page arrives. No
+  // useTransition: its isPending is the thing that used to hang.
   const navigate = useCallback(
     (path: string) => {
-      startTransition(() => {
-        router.push(path);
-        router.refresh();
-      });
+      beginNav();
+      router.push(path);
+      router.refresh();
     },
-    [router, startTransition],
+    [router, beginNav],
   );
 
+  // Observe (don't hijack) internal link clicks so the bar starts the instant the user clicks,
+  // before Next's own soft navigation resolves. We deliberately do NOT preventDefault or
+  // stopPropagation here — letting <Link> handle the navigation avoids the double-push / event
+  // interference that made clicks occasionally do nothing.
   useEffect(() => {
-    function handleClick(event: MouseEvent) {
-      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
-        return;
-      }
+    function onClick(event: MouseEvent) {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
       const anchor = (event.target as HTMLElement)?.closest?.("a");
       if (!anchor) return;
 
@@ -68,27 +102,19 @@ export function GlobalProgressProvider({ children }: { children: ReactNode }) {
         return;
       }
       if (url.origin !== window.location.origin) return;
+      // Same page — no navigation will happen, so don't show a bar that would never clear.
       if (url.pathname === window.location.pathname && url.search === window.location.search) return;
 
-      // Take over the navigation ourselves (instead of just observing) so we can track
-      // it with useTransition's isPending, which stays true until the destination page's
-      // data-fetching has actually finished — not just until the URL changes. Relying on
-      // usePathname()/router-state alone made the bar disappear before the page was ready.
-      event.preventDefault();
-      event.stopPropagation();
-
-      startTransition(() => {
-        router.push(url.pathname + url.search);
-      });
+      beginNav();
     }
 
-    // Capture phase: run before Next's own <Link> click handler (attached on the anchor
-    // itself) can call preventDefault() and start its own navigation.
-    document.addEventListener("click", handleClick, true);
-    return () => document.removeEventListener("click", handleClick, true);
-  }, [router, startTransition]);
+    // Capture phase: observe the click before <Link>'s own handler runs (it calls
+    // preventDefault to do the SPA navigation), so we can start the bar without interfering.
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, [beginNav]);
 
-  const visible = isTransitionPending || manualCount > 0;
+  const visible = navigating || manualCount > 0;
   const contextValue = useMemo(
     () => ({ isPending: visible, start, stop, navigate }),
     [visible, start, stop, navigate],
@@ -96,10 +122,11 @@ export function GlobalProgressProvider({ children }: { children: ReactNode }) {
 
   return (
     <GlobalProgressContext.Provider value={contextValue}>
+      <Suspense fallback={null}>
+        <RouteWatcher onArrive={endNav} />
+      </Suspense>
       <div aria-hidden="true" className="fixed inset-x-0 top-0 z-[100] h-0.5 overflow-hidden bg-transparent">
-        {visible && (
-          <div className="h-full w-1/3 animate-[route-progress_1s_ease-in-out_infinite] bg-brand" />
-        )}
+        {visible && <div className="h-full w-1/3 animate-[route-progress_1s_ease-in-out_infinite] bg-brand" />}
       </div>
       {children}
     </GlobalProgressContext.Provider>
